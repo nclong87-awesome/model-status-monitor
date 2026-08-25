@@ -1,0 +1,82 @@
+/**
+ * Helper utilities for formatting timestamps and relative unlock times.
+ */
+
+/**
+ * Format a UTC unlock timestamp string into a human-readable relative duration string
+ * Example outputs:
+ *  - "in 3 hours"
+ *  - "in 1 day"
+ *  - "in 4 days 5 hours"
+ *  - "in 25 minutes"
+ *  - "unlocking now"
+ */
+export function formatUnlockTime(unlocksAtUtc: string | null | undefined, now: Date = new Date()): string {
+  if (!unlocksAtUtc) {
+    return '';
+  }
+
+  const unlockDate = new Date(unlocksAtUtc);
+  if (isNaN(unlockDate.getTime())) {
+    return '';
+  }
+
+  const diffMs = unlockDate.getTime() - now.getTime();
+
+  if (diffMs <= 0) {
+    return 'unlocking now';
+  }
+
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const totalDays = Math.floor(totalHours / 24);
+
+  const remHours = totalHours % 24;
+  const remMinutes = totalMinutes % 60;
+  const remSeconds = totalSeconds % 60;
+
+  // 1. Days (e.g. "in 1 day", "in 4 days 5 hours", "in 2 days")
+  if (totalDays >= 1) {
+    const dayStr = `${totalDays} ${totalDays === 1 ? 'day' : 'days'}`;
+    if (remHours > 0) {
+      const hourStr = `${remHours} ${remHours === 1 ? 'hour' : 'hours'}`;
+      return `in ${dayStr} ${hourStr}`;
+    }
+    return `in ${dayStr}`;
+  }
+
+  // 2. Hours (e.g. "in 3 hours", "in 3 hours 15 mins")
+  if (totalHours >= 1) {
+    const hourStr = `${totalHours} ${totalHours === 1 ? 'hour' : 'hours'}`;
+    if (remMinutes > 0) {
+      const minStr = `${remMinutes} ${remMinutes === 1 ? 'min' : 'mins'}`;
+      return `in ${hourStr} ${minStr}`;
+    }
+    return `in ${hourStr}`;
+  }
+
+  // 3. Minutes (e.g. "in 25 minutes", "in 1 minute 30 secs")
+  if (totalMinutes >= 1) {
+    const minStr = `${totalMinutes} ${totalMinutes === 1 ? 'minute' : 'minutes'}`;
+    if (remSeconds > 0 && totalMinutes < 10) {
+      const secStr = `${remSeconds} ${remSeconds === 1 ? 'sec' : 'secs'}`;
+      return `in ${minStr} ${secStr}`;
+    }
+    return `in ${minStr}`;
+  }
+
+  // 4. Seconds (e.g. "in 45 seconds")
+  return `in ${totalSeconds} ${totalSeconds === 1 ? 'second' : 'seconds'}`;
+}
+
+/**
+ * Helper to calculate a future ISO timestamp string given relative offsets (days, hours, minutes)
+ */
+export function createUnlockTimestamp(offsetHours: number = 0, offsetDays: number = 0, offsetMinutes: number = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  d.setHours(d.getHours() + offsetHours);
+  d.setMinutes(d.getMinutes() + offsetMinutes);
+  return d.toISOString();
+}

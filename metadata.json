@@ -1,0 +1,6 @@
+{
+  "name": "LLM Model Status Monitor",
+  "description": "A lightweight status dashboard to monitor, search, and sort LLM model availability, latency, success rates, and provider metrics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
