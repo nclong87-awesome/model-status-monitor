@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ModelStatus } from '../types';
 import { X, CheckCircle2, AlertTriangle, Lock, Unlock, Clock, Shield, Server } from 'lucide-react';
-import { formatUnlockTime } from '../utils/timeUtils';
+import { formatUnlockTime, formatSuccessRate } from '../utils/timeUtils';
 
 interface ModelDetailModalProps {
   model: ModelStatus | null;
@@ -113,7 +113,7 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({ model, onClo
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Successful / Total Requests</span>
               <span className="font-mono font-semibold text-slate-800">
-                {model.successfulRequests} / {model.totalRequests} ({model.successRatePercent}%)
+                {model.successfulRequests} / {model.totalRequests} ({formatSuccessRate(model.successRatePercent)}%)
               </span>
             </div>
 

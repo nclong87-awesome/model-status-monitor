@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ModelStatus, SortField, SortOrder } from '../types';
 import { ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, AlertTriangle, Lock, Unlock, Clock, Info } from 'lucide-react';
-import { formatUnlockTime } from '../utils/timeUtils';
+import { formatUnlockTime, formatSuccessRate } from '../utils/timeUtils';
 
 interface StatusTableProps {
   models: ModelStatus[];
@@ -220,18 +220,18 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                   </td>
 
                   {/* Success Rate */}
-                  <td className="py-3 px-4 min-w-[140px]">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <td className="py-3 px-4 min-w-[170px]">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden min-w-[36px]">
                         <div
                           className={`h-full transition-all ${rateColor}`}
-                          style={{ width: `${item.successRatePercent}%` }}
+                          style={{ width: `${Math.min(100, Math.max(0, item.successRatePercent))}%` }}
                         />
                       </div>
-                      <span className="font-mono text-xs font-medium text-slate-700 w-12 text-right">
-                        {item.successRatePercent}%
+                      <span className="font-mono text-xs font-medium text-slate-700 min-w-[42px] text-right shrink-0">
+                        {formatSuccessRate(item.successRatePercent)}%
                       </span>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-slate-400 shrink-0">
                         ({item.successfulRequests}/{item.totalRequests})
                       </span>
                     </div>

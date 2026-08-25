@@ -71,6 +71,25 @@ export function formatUnlockTime(unlocksAtUtc: string | null | undefined, now: D
 }
 
 /**
+ * Format success rate percentage cleanly without long decimal tails.
+ * Examples:
+ *  - 100 => "100"
+ *  - 66.66666666666667 => "66.7"
+ *  - 50 => "50"
+ *  - 0 => "0"
+ */
+export function formatSuccessRate(rate: number | null | undefined): string {
+  if (rate === null || rate === undefined || isNaN(rate)) {
+    return '0';
+  }
+  if (Number.isInteger(rate)) {
+    return rate.toString();
+  }
+  const rounded = Number(rate.toFixed(1));
+  return rounded.toString();
+}
+
+/**
  * Helper to calculate a future ISO timestamp string given relative offsets (days, hours, minutes)
  */
 export function createUnlockTimestamp(offsetHours: number = 0, offsetDays: number = 0, offsetMinutes: number = 0): string {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ModelStatus } from '../types';
 import { X, Copy, Check, FileCode, Download, RefreshCw, AlertCircle } from 'lucide-react';
-import { formatUnlockTime } from '../utils/timeUtils';
+import { formatUnlockTime, formatSuccessRate } from '../utils/timeUtils';
 
 interface JsonModalProps {
   data: ModelStatus[];
@@ -112,7 +112,7 @@ export const JsonModal: React.FC<JsonModalProps> = ({ data, onSave, onReset, onC
               <div class="progress-bg">
                 <div class="progress-fill ${m.successRatePercent < 50 ? 'low' : ''}" style="width: ${m.successRatePercent}%;"></div>
               </div>
-              <span class="mono">${m.successRatePercent}%</span>
+              <span class="mono">${formatSuccessRate(m.successRatePercent)}%</span>
             </td>
             <td style="text-align: center;">${m.isLocked ? `🔒 Locked (${formatUnlockTime(m.unlocksAtUtc)})` : '🔓 Unlocked'}</td>
           </tr>
