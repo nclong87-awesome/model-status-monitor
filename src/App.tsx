@@ -194,7 +194,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         {/* Top App Header */}
         <Header
           totalCount={data.length}
