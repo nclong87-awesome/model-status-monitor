@@ -1,30 +1,58 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ModelStatus, SortField, SortOrder } from './types';
 import { INITIAL_MODEL_DATA } from './data/initialData';
+import { fetchModelStatus, API_URL } from './services/api';
 import { Header } from './components/Header';
 import { StatsOverview } from './components/StatsOverview';
 import { FilterBar } from './components/FilterBar';
 import { StatusTable } from './components/StatusTable';
 import { ModelDetailModal } from './components/ModelDetailModal';
 import { JsonModal } from './components/JsonModal';
+import { AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 const STORAGE_KEY = 'llm_model_status_data_v1';
 
 export default function App() {
-  const [data, setData] = useState<ModelStatus[]>(() => {
+  const [data, setData] = useState<ModelStatus[]>(INITIAL_MODEL_DATA);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<string>('Just now');
+  const [usingFallback, setUsingFallback] = useState<boolean>(false);
+
+  const loadApiData = useCallback(async () => {
+    setIsLoading(true);
+    setFetchError(null);
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+      const apiData = await fetchModelStatus();
+      setData(apiData);
+      setUsingFallback(false);
+      setLastFetchTime(new Date().toLocaleTimeString());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(apiData));
+    } catch (err: any) {
+      console.warn('API fetch failed, utilizing model data fallback:', err);
+      setFetchError(err?.message || 'Unable to connect to http://localhost:5204/api/ai/models/status');
+      setUsingFallback(true);
+      // Attempt to load cached data or keep current/initial data
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setData(parsed);
+          }
         }
+      } catch {
+        // keep initial data
       }
-    } catch {
-      // ignore
+    } finally {
+      setIsLoading(false);
     }
-    return INITIAL_MODEL_DATA;
-  });
+  }, []);
+
+  // Fetch on mount
+  useEffect(() => {
+    loadApiData();
+  }, [loadApiData]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('all');
@@ -36,9 +64,11 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState<ModelStatus | null>(null);
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
 
-  // Sync to local storage on change
+  // Sync to local storage on manual state edits
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    if (data && data.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
   }, [data]);
 
   // Extract unique providers & tiers
@@ -105,10 +135,9 @@ export default function App() {
     setSortOrder('asc');
   };
 
-  // Reset to default prompt dataset
+  // Reset/re-fetch data
   const handleResetData = () => {
-    setData(INITIAL_MODEL_DATA);
-    localStorage.removeItem(STORAGE_KEY);
+    loadApiData();
     handleResetFilters();
   };
 
@@ -169,10 +198,41 @@ export default function App() {
         {/* Top App Header */}
         <Header
           totalCount={data.length}
-          lastUpdated="Recent"
+          lastUpdated={lastFetchTime}
+          isLoading={isLoading}
+          apiEndpoint={API_URL}
           onOpenJsonModal={() => setIsJsonModalOpen(true)}
-          onResetData={handleResetData}
+          onRefreshApi={loadApiData}
         />
+
+        {/* API Fetch Notification Banner if Offline or Failed */}
+        {fetchError && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-800">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>API connection note:</strong> Could not connect to <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900">{API_URL}</code> ({fetchError}). Displaying local model status schema.
+              </span>
+            </div>
+            <button
+              onClick={loadApiData}
+              disabled={isLoading}
+              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 cursor-pointer flex items-center gap-1"
+            >
+              <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+              Retry Fetch
+            </button>
+          </div>
+        )}
+
+        {!fetchError && !isLoading && !usingFallback && (
+          <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>
+              Successfully fetched live model status from <code className="bg-emerald-100/80 px-1 py-0.5 rounded text-emerald-950 font-mono">{API_URL}</code>
+            </span>
+          </div>
+        )}
 
         {/* Summary Stats Cards */}
         <StatsOverview data={data} />
@@ -228,3 +288,4 @@ export default function App() {
     </div>
   );
 }
+
