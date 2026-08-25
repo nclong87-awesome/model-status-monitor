@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#090D16" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Border Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#818CF8" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#34D399" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Glowing Signal Pulse Gradient -->
+    <linearGradient id="pulseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#818CF8" />
+      <stop offset="100%" stop-color="#34D399" />
+    </linearGradient>
+
+    <!-- Status Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="nodeGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Base Dark Glass Container -->
+  <rect x="20" y="20" width="472" height="472" rx="118" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="12" />
+
+  <!-- Orbit Rings -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#38BDF8" stroke-opacity="0.1" stroke-width="3" stroke-dasharray="10 10" />
+  <circle cx="256" cy="256" r="115" fill="none" stroke="#818CF8" stroke-opacity="0.15" stroke-width="3" />
+
+  <!-- Outer Orbital Arc -->
+  <path d="M 141 256 A 115 115 0 1 1 371 256" fill="none" stroke="url(#pulseGrad)" stroke-width="16" stroke-linecap="round" filter="url(#glow)" />
+
+  <!-- Heartbeat / Neural Pulse Wave -->
+  <path d="M 125 256 L 180 256 L 208 170 L 242 342 L 274 195 L 302 275 L 324 256 L 387 256" fill="none" stroke="url(#pulseGrad)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" />
+
+  <!-- Live Status Green Pulse Node (Top Right) -->
+  <circle cx="365" cy="147" r="30" fill="#10B981" filter="url(#nodeGlow)" />
+  <circle cx="365" cy="147" r="28" fill="#34D399" />
+  <circle cx="365" cy="147" r="14" fill="#FFFFFF" />
+
+  <!-- Orbital Sparkle Node (Bottom Left) -->
+  <circle cx="147" cy="365" r="12" fill="#38BDF8" filter="url(#glow)" />
+</svg>
