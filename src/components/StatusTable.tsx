@@ -37,9 +37,11 @@ export const StatusTable: React.FC<StatusTableProps> = ({
     );
   };
 
-  const formatTimestamp = (dateStr: string) => {
+  const formatTimestamp = (dateStr?: string | null) => {
+    if (!dateStr) return 'Untested';
     try {
       const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
       return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     } catch {
       return dateStr;
@@ -136,8 +138,14 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                 <span>Lock</span>
               </th>
 
-              <th className="py-3 px-4 text-right">
-                <span>Last Tested</span>
+              <th
+                onClick={() => onSort('lastTestedUtc')}
+                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group text-right"
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Last Tested</span>
+                  {renderSortIcon('lastTestedUtc')}
+                </div>
               </th>
 
               <th className="py-3 px-4 text-center w-16">
@@ -147,9 +155,14 @@ export const StatusTable: React.FC<StatusTableProps> = ({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {models.map((item) => {
-              const isHealthy = item.status.toLowerCase() === 'healthy';
+              const statusLower = item.status?.toLowerCase() || 'untested';
+              const isHealthy = statusLower === 'healthy';
+              const isUntested = statusLower === 'untested';
+              
               const rateColor =
-                item.successRatePercent === 100
+                item.successRatePercent === null || item.successRatePercent === undefined
+                  ? 'bg-slate-300'
+                  : item.successRatePercent === 100
                   ? 'bg-emerald-500'
                   : item.successRatePercent >= 50
                   ? 'bg-amber-500'
@@ -187,6 +200,11 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Healthy
                       </span>
+                    ) : isUntested ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                        <Clock className="w-3.5 h-3.5" />
+                        Untested
+                      </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
                         <AlertTriangle className="w-3.5 h-3.5" />
@@ -198,7 +216,7 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                   {/* Tier */}
                   <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
                     <span className={`inline-block px-2 py-0.5 rounded-sm font-medium ${
-                      item.tier.includes('Tier 1')
+                      item.tier?.includes('Tier 1')
                         ? 'bg-blue-50 text-blue-700 border border-blue-100'
                         : 'bg-amber-50 text-amber-800 border border-amber-100'
                     }`}>
@@ -208,15 +226,19 @@ export const StatusTable: React.FC<StatusTableProps> = ({
 
                   {/* Avg Latency */}
                   <td className="py-3 px-4 text-right whitespace-nowrap">
-                    <span className={`font-mono font-semibold text-xs ${
-                      item.averageTimeSeconds < 3
-                        ? 'text-emerald-600'
-                        : item.averageTimeSeconds < 6
-                        ? 'text-slate-800'
-                        : 'text-amber-700'
-                    }`}>
-                      {item.averageTimeSeconds.toFixed(3)}s
-                    </span>
+                    {item.averageTimeSeconds != null ? (
+                      <span className={`font-mono font-semibold text-xs ${
+                        item.averageTimeSeconds < 3
+                          ? 'text-emerald-600'
+                          : item.averageTimeSeconds < 6
+                          ? 'text-slate-800'
+                          : 'text-amber-700'
+                      }`}>
+                        {item.averageTimeSeconds.toFixed(3)}s
+                      </span>
+                    ) : (
+                      <span className="font-mono text-xs text-slate-400">N/A</span>
+                    )}
                   </td>
 
                   {/* Success Rate */}
@@ -225,14 +247,14 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                       <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden min-w-[36px]">
                         <div
                           className={`h-full transition-all ${rateColor}`}
-                          style={{ width: `${Math.min(100, Math.max(0, item.successRatePercent))}%` }}
+                          style={{ width: `${Math.min(100, Math.max(0, item.successRatePercent ?? 0))}%` }}
                         />
                       </div>
                       <span className="font-mono text-xs font-medium text-slate-700 min-w-[42px] text-right shrink-0">
-                        {formatSuccessRate(item.successRatePercent)}%
+                        {item.successRatePercent != null ? `${formatSuccessRate(item.successRatePercent)}%` : 'N/A'}
                       </span>
                       <span className="text-[11px] text-slate-400 shrink-0">
-                        ({item.successfulRequests}/{item.totalRequests})
+                        ({item.successfulRequests ?? 0}/{item.totalRequests ?? 0})
                       </span>
                     </div>
                   </td>

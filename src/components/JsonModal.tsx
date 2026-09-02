@@ -96,27 +96,34 @@ export const JsonModal: React.FC<JsonModalProps> = ({ data, onSave, onReset, onC
           </tr>
         </thead>
         <tbody>
-          ${data.map(m => `
+          ${data.map(m => {
+            const statusLower = m.status?.toLowerCase() || 'untested';
+            const isHealthy = statusLower === 'healthy';
+            const isUntested = statusLower === 'untested';
+            const rate = m.successRatePercent ?? 0;
+            const avgTimeStr = m.averageTimeSeconds != null ? `${m.averageTimeSeconds.toFixed(3)}s` : 'N/A';
+            return `
           <tr>
             <td style="color:#64748b; font-weight:600;">${m.rank}</td>
             <td><span class="badge-provider">${m.provider}</span></td>
             <td class="mono"><strong>${m.model}</strong></td>
             <td>
-              <span class="badge ${m.status.toLowerCase() === 'healthy' ? 'badge-healthy' : 'badge-unhealthy'}">
-                ${m.status.toLowerCase() === 'healthy' ? '✓ Healthy' : '⚠ Unhealthy'}
+              <span class="badge ${isHealthy ? 'badge-healthy' : isUntested ? 'badge-untested' : 'badge-unhealthy'}">
+                ${isHealthy ? '✓ Healthy' : isUntested ? '⧗ Untested' : '⚠ Unhealthy'}
               </span>
             </td>
             <td style="color:#475569;">${m.tier}</td>
-            <td style="text-align: right;" class="mono">${m.averageTimeSeconds.toFixed(3)}s</td>
+            <td style="text-align: right;" class="mono">${avgTimeStr}</td>
             <td>
               <div class="progress-bg">
-                <div class="progress-fill ${m.successRatePercent < 50 ? 'low' : ''}" style="width: ${m.successRatePercent}%;"></div>
+                <div class="progress-fill ${rate < 50 ? 'low' : ''}" style="width: ${m.successRatePercent != null ? rate : 0}%;"></div>
               </div>
-              <span class="mono">${formatSuccessRate(m.successRatePercent)}%</span>
+              <span class="mono">${m.successRatePercent != null ? formatSuccessRate(m.successRatePercent) + '%' : 'N/A'}</span>
             </td>
             <td style="text-align: center;">${m.isLocked ? `🔒 Locked (${formatUnlockTime(m.unlocksAtUtc)})` : '🔓 Unlocked'}</td>
           </tr>
-          `).join('')}
+          `;
+          }).join('')}
         </tbody>
       </table>
     </div>

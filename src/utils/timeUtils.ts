@@ -90,6 +90,16 @@ export function formatSuccessRate(rate: number | null | undefined): string {
 }
 
 /**
+ * Format average latency time in seconds.
+ */
+export function formatAverageTime(seconds: number | null | undefined, decimals = 3): string {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) {
+    return 'N/A';
+  }
+  return `${seconds.toFixed(decimals)}s`;
+}
+
+/**
  * Helper to calculate a future ISO timestamp string given relative offsets (days, hours, minutes)
  */
 export function createUnlockTimestamp(offsetHours: number = 0, offsetDays: number = 0, offsetMinutes: number = 0): string {

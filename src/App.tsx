@@ -58,8 +58,8 @@ export default function App() {
   const [selectedProvider, setSelectedProvider] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedTier, setSelectedTier] = useState('all');
-  const [sortField, setSortField] = useState<SortField>('rank');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [sortField, setSortField] = useState<SortField>('lastTestedUtc');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   const [selectedModel, setSelectedModel] = useState<ModelStatus | null>(null);
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
@@ -88,7 +88,7 @@ export default function App() {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortOrder('asc');
+      setSortOrder(field === 'lastTestedUtc' ? 'desc' : 'asc');
     }
   };
 
@@ -131,8 +131,8 @@ export default function App() {
     setSelectedProvider('all');
     setSelectedStatus('all');
     setSelectedTier('all');
-    setSortField('rank');
-    setSortOrder('asc');
+    setSortField('lastTestedUtc');
+    setSortOrder('desc');
   };
 
   // Reset/re-fetch data
@@ -166,10 +166,13 @@ export default function App() {
 
         // Status filter
         if (selectedStatus === 'healthy') {
-          return m.status.toLowerCase() === 'healthy';
+          return m.status?.toLowerCase() === 'healthy';
         }
         if (selectedStatus === 'unhealthy') {
-          return m.status.toLowerCase() !== 'healthy';
+          return m.status?.toLowerCase() === 'unhealthy';
+        }
+        if (selectedStatus === 'untested') {
+          return m.status?.toLowerCase() === 'untested';
         }
         if (selectedStatus === 'locked') {
           return m.isLocked;
@@ -180,6 +183,18 @@ export default function App() {
       .sort((a, b) => {
         let aVal: any = a[sortField];
         let bVal: any = b[sortField];
+
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return sortOrder === 'asc' ? 1 : -1;
+        if (bVal == null) return sortOrder === 'asc' ? -1 : 1;
+
+        if (sortField === 'lastTestedUtc') {
+          const timeA = new Date(aVal).getTime();
+          const timeB = new Date(bVal).getTime();
+          if (!isNaN(timeA) && !isNaN(timeB)) {
+            return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+          }
+        }
 
         if (typeof aVal === 'string') {
           aVal = aVal.toLowerCase();

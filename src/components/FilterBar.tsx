@@ -92,6 +92,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <option value="all">All Statuses</option>
             <option value="healthy">Healthy Only</option>
             <option value="unhealthy">Unhealthy Only</option>
+            <option value="untested">Untested Only</option>
             <option value="locked">Locked Only</option>
           </select>
 

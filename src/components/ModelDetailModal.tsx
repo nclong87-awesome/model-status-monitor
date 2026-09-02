@@ -21,7 +21,8 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({ model, onClo
 
   if (!model) return null;
 
-  const isHealthy = model.status.toLowerCase() === 'healthy';
+  const statusLower = model.status?.toLowerCase() || 'untested';
+  const isHealthy = statusLower === 'healthy';
   const relativeUnlockTime = model.isLocked ? formatUnlockTime(model.unlocksAtUtc, now) : '';
 
   return (
@@ -107,26 +108,28 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({ model, onClo
 
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Average Response Time</span>
-              <span className="font-mono font-semibold text-slate-800">{model.averageTimeSeconds}s</span>
+              <span className="font-mono font-semibold text-slate-800">
+                {model.averageTimeSeconds != null ? `${model.averageTimeSeconds.toFixed(3)}s` : 'N/A'}
+              </span>
             </div>
 
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Successful / Total Requests</span>
               <span className="font-mono font-semibold text-slate-800">
-                {model.successfulRequests} / {model.totalRequests} ({formatSuccessRate(model.successRatePercent)}%)
+                {model.successfulRequests ?? 0} / {model.totalRequests ?? 0} ({model.successRatePercent != null ? `${formatSuccessRate(model.successRatePercent)}%` : 'N/A'})
               </span>
             </div>
 
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Consecutive Failures</span>
-              <span className={`font-mono font-semibold ${model.consecutiveFailures > 0 ? 'text-rose-600' : 'text-slate-800'}`}>
-                {model.consecutiveFailures}
+              <span className={`font-mono font-semibold ${(model.consecutiveFailures ?? 0) > 0 ? 'text-rose-600' : 'text-slate-800'}`}>
+                {model.consecutiveFailures ?? 0}
               </span>
             </div>
 
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Last Tested (UTC)</span>
-              <span className="font-mono text-slate-700">{model.lastTestedUtc}</span>
+              <span className="font-mono text-slate-700">{model.lastTestedUtc || 'Untested / N/A'}</span>
             </div>
 
             {model.isLocked && (

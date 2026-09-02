@@ -2,15 +2,15 @@ export interface ModelStatus {
   rank: number;
   provider: string;
   model: string;
-  status: 'healthy' | 'unhealthy' | string;
+  status: 'healthy' | 'unhealthy' | 'untested' | string;
   tier: string;
-  averageTimeSeconds: number;
+  averageTimeSeconds: number | null;
   successfulRequests: number;
   totalRequests: number;
-  successRatePercent: number;
+  successRatePercent: number | null;
   isLocked: boolean;
   unlocksAtUtc: string | null;
-  lastTestedUtc: string;
+  lastTestedUtc: string | null;
   consecutiveFailures: number;
 }
 
@@ -22,6 +22,7 @@ export type SortField =
   | 'tier' 
   | 'averageTimeSeconds' 
   | 'successRatePercent' 
-  | 'consecutiveFailures';
+  | 'consecutiveFailures'
+  | 'lastTestedUtc';
 
 export type SortOrder = 'asc' | 'desc';

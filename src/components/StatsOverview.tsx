@@ -8,17 +8,21 @@ interface StatsOverviewProps {
 
 export const StatsOverview: React.FC<StatsOverviewProps> = ({ data }) => {
   const total = data.length;
-  const healthyCount = data.filter((m) => m.status.toLowerCase() === 'healthy').length;
+  const healthyCount = data.filter((m) => m.status?.toLowerCase() === 'healthy').length;
   const unhealthyCount = total - healthyCount;
   const lockedCount = data.filter((m) => m.isLocked).length;
 
-  const healthyModels = data.filter((m) => m.status.toLowerCase() === 'healthy');
-  const avgLatency = healthyModels.length > 0
-    ? (healthyModels.reduce((acc, m) => acc + m.averageTimeSeconds, 0) / healthyModels.length).toFixed(2)
+  const healthyModelsWithLatency = data.filter(
+    (m) => m.status?.toLowerCase() === 'healthy' && m.averageTimeSeconds != null
+  );
+
+  const avgLatency = healthyModelsWithLatency.length > 0
+    ? (healthyModelsWithLatency.reduce((acc, m) => acc + (m.averageTimeSeconds ?? 0), 0) / healthyModelsWithLatency.length).toFixed(2)
     : '0.00';
 
-  const fastestModel = data.length > 0
-    ? [...data].sort((a, b) => a.averageTimeSeconds - b.averageTimeSeconds)[0]
+  const modelsWithLatency = data.filter((m) => m.averageTimeSeconds != null);
+  const fastestModel = modelsWithLatency.length > 0
+    ? [...modelsWithLatency].sort((a, b) => (a.averageTimeSeconds ?? 0) - (b.averageTimeSeconds ?? 0))[0]
     : null;
 
   const healthyPercentage = total > 0 ? Math.round((healthyCount / total) * 100) : 0;
@@ -81,7 +85,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ data }) => {
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900">{avgLatency}s</span>
-          {fastestModel && (
+          {fastestModel && fastestModel.averageTimeSeconds != null && (
             <span className="text-xs text-slate-500 truncate max-w-[110px]" title={`Fastest: ${fastestModel.model} (${fastestModel.averageTimeSeconds.toFixed(2)}s)`}>
               Best: {fastestModel.averageTimeSeconds.toFixed(2)}s
             </span>
