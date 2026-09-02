@@ -8,9 +8,10 @@ import { FilterBar } from './components/FilterBar';
 import { StatusTable } from './components/StatusTable';
 import { ModelDetailModal } from './components/ModelDetailModal';
 import { JsonModal } from './components/JsonModal';
-import { AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, RefreshCw, CheckCircle2, X } from 'lucide-react';
 
 const STORAGE_KEY = 'llm_model_status_data_v1';
+const SHOW_STATS_KEY = 'llm_model_status_show_stats';
 
 export default function App() {
   const [data, setData] = useState<ModelStatus[]>(INITIAL_MODEL_DATA);
@@ -19,9 +20,32 @@ export default function App() {
   const [lastFetchTime, setLastFetchTime] = useState<string>('Just now');
   const [usingFallback, setUsingFallback] = useState<boolean>(false);
 
+  const [isBannerDismissed, setIsBannerDismissed] = useState<boolean>(false);
+  const [showStats, setShowStats] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(SHOW_STATS_KEY);
+      return saved !== 'false';
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleStats = useCallback(() => {
+    setShowStats((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SHOW_STATS_KEY, String(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+  }, []);
+
   const loadApiData = useCallback(async () => {
     setIsLoading(true);
     setFetchError(null);
+    setIsBannerDismissed(false);
     try {
       const apiData = await fetchModelStatus();
       setData(apiData);
@@ -225,41 +249,61 @@ export default function App() {
           lastUpdated={lastFetchTime}
           isLoading={isLoading}
           apiEndpoint={API_URL}
+          showStats={showStats}
+          onToggleStats={toggleStats}
           onOpenJsonModal={() => setIsJsonModalOpen(true)}
           onRefreshApi={loadApiData}
         />
 
         {/* API Fetch Notification Banner if Offline or Failed */}
-        {fetchError && (
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-800">
-            <div className="flex items-center gap-2">
+        {fetchError && !isBannerDismissed && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-800 transition-all">
+            <div className="flex items-center gap-2 flex-1 pr-2">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
               <span>
-                <strong>API connection note:</strong> Could not connect to <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900">{API_URL}</code> ({fetchError}). Displaying local model status schema.
+                <strong>API connection note:</strong> Could not connect to <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">{API_URL}</code> ({fetchError}). Displaying local model status schema.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={loadApiData}
+                disabled={isLoading}
+                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 cursor-pointer flex items-center gap-1 transition-colors"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                Retry Fetch
+              </button>
+              <button
+                onClick={() => setIsBannerDismissed(true)}
+                className="p-1 hover:bg-amber-200/60 text-amber-700 rounded-lg transition-colors cursor-pointer"
+                title="Dismiss connection notice to save space"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!fetchError && !isLoading && !usingFallback && !isBannerDismissed && (
+          <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 text-xs text-emerald-800">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                Successfully fetched live model status from <code className="bg-emerald-100/80 px-1 py-0.5 rounded text-emerald-950 font-mono">{API_URL}</code>
               </span>
             </div>
             <button
-              onClick={loadApiData}
-              disabled={isLoading}
-              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 cursor-pointer flex items-center gap-1"
+              onClick={() => setIsBannerDismissed(true)}
+              className="p-1 hover:bg-emerald-200/60 text-emerald-800 rounded-lg transition-colors cursor-pointer"
+              title="Dismiss banner"
             >
-              <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-              Retry Fetch
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        {!fetchError && !isLoading && !usingFallback && (
-          <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>
-              Successfully fetched live model status from <code className="bg-emerald-100/80 px-1 py-0.5 rounded text-emerald-950 font-mono">{API_URL}</code>
-            </span>
-          </div>
-        )}
-
         {/* Summary Stats Cards */}
-        <StatsOverview data={data} />
+        {showStats && <StatsOverview data={data} onHide={toggleStats} />}
 
         {/* Search & Filter Bar */}
         <FilterBar

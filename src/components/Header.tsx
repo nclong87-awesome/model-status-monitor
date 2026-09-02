@@ -1,11 +1,13 @@
 import React from 'react';
-import { Activity, Code2, RefreshCw, Server } from 'lucide-react';
+import { Activity, Code2, RefreshCw, Server, Eye, EyeOff } from 'lucide-react';
 
 interface HeaderProps {
   totalCount: number;
   lastUpdated: string;
   isLoading?: boolean;
   apiEndpoint?: string;
+  showStats?: boolean;
+  onToggleStats?: () => void;
   onOpenJsonModal: () => void;
   onRefreshApi: () => void;
 }
@@ -15,6 +17,8 @@ export const Header: React.FC<HeaderProps> = ({
   lastUpdated,
   isLoading = false,
   apiEndpoint = 'http://localhost:5204/api/ai/models/status',
+  showStats = true,
+  onToggleStats,
   onOpenJsonModal,
   onRefreshApi,
 }) => {
@@ -40,7 +44,18 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 self-start md:self-auto">
+      <div className="flex items-center gap-2 flex-wrap self-start md:self-auto">
+        {onToggleStats && (
+          <button
+            onClick={onToggleStats}
+            className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            title={showStats ? "Hide summary stats cards to save vertical space" : "Show summary stats cards"}
+          >
+            {showStats ? <EyeOff className="w-3.5 h-3.5 text-slate-500" /> : <Eye className="w-3.5 h-3.5 text-slate-500" />}
+            <span>{showStats ? 'Hide Stats' : 'Show Stats'}</span>
+          </button>
+        )}
+
         <button
           onClick={onRefreshApi}
           disabled={isLoading}

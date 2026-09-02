@@ -1,12 +1,13 @@
 import React from 'react';
 import { ModelStatus } from '../types';
-import { Activity, CheckCircle2, AlertTriangle, Zap, ShieldAlert, Cpu } from 'lucide-react';
+import { Activity, CheckCircle2, AlertTriangle, Zap, ShieldAlert, Cpu, X } from 'lucide-react';
 
 interface StatsOverviewProps {
   data: ModelStatus[];
+  onHide?: () => void;
 }
 
-export const StatsOverview: React.FC<StatsOverviewProps> = ({ data }) => {
+export const StatsOverview: React.FC<StatsOverviewProps> = ({ data, onHide }) => {
   const total = data.length;
   const healthyCount = data.filter((m) => m.status?.toLowerCase() === 'healthy').length;
   const unhealthyCount = total - healthyCount;
@@ -28,68 +29,83 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ data }) => {
   const healthyPercentage = total > 0 ? Math.round((healthyCount / total) * 100) : 0;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      {/* Total Models */}
-      <div id="stat-total-models" className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Models</span>
-          <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-            <Cpu className="w-4 h-4" />
+    <div className="mb-6">
+      {onHide && (
+        <div className="flex justify-between items-center mb-2 px-1">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Summary Overview</span>
+          <button
+            onClick={onHide}
+            className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors cursor-pointer"
+            title="Hide summary stats cards to save vertical space"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Hide Overview</span>
+          </button>
+        </div>
+      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Total Models */}
+        <div id="stat-total-models" className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Models</span>
+            <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+              <Cpu className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-slate-900">{total}</span>
+            <span className="text-xs text-slate-500">tracked</span>
           </div>
         </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-slate-900">{total}</span>
-          <span className="text-xs text-slate-500">tracked</span>
-        </div>
-      </div>
 
-      {/* Healthy Models */}
-      <div id="stat-healthy-models" className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Healthy Status</span>
-          <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-            <CheckCircle2 className="w-4 h-4" />
+        {/* Healthy Models */}
+        <div id="stat-healthy-models" className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Healthy Status</span>
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
           </div>
-        </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-emerald-600">{healthyCount}</span>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-            {healthyPercentage}%
-          </span>
-        </div>
-      </div>
-
-      {/* Unhealthy / Locked */}
-      <div id="stat-unhealthy-models" className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Unhealthy / Locked</span>
-          <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
-            <ShieldAlert className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-rose-600">{unhealthyCount}</span>
-          <span className="text-xs text-slate-500">
-            ({lockedCount} locked)
-          </span>
-        </div>
-      </div>
-
-      {/* Avg Latency */}
-      <div id="stat-avg-latency" className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Latency (Healthy)</span>
-          <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-            <Zap className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-slate-900">{avgLatency}s</span>
-          {fastestModel && fastestModel.averageTimeSeconds != null && (
-            <span className="text-xs text-slate-500 truncate max-w-[110px]" title={`Fastest: ${fastestModel.model} (${fastestModel.averageTimeSeconds.toFixed(2)}s)`}>
-              Best: {fastestModel.averageTimeSeconds.toFixed(2)}s
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-emerald-600">{healthyCount}</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+              {healthyPercentage}%
             </span>
-          )}
+          </div>
+        </div>
+
+        {/* Unhealthy / Locked */}
+        <div id="stat-unhealthy-models" className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Unhealthy / Locked</span>
+            <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
+              <ShieldAlert className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-rose-600">{unhealthyCount}</span>
+            <span className="text-xs text-slate-500">
+              ({lockedCount} locked)
+            </span>
+          </div>
+        </div>
+
+        {/* Avg Latency */}
+        <div id="stat-avg-latency" className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Latency (Healthy)</span>
+            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+              <Zap className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-slate-900">{avgLatency}s</span>
+            {fastestModel && fastestModel.averageTimeSeconds != null && (
+              <span className="text-xs text-slate-500 truncate max-w-[110px]" title={`Fastest: ${fastestModel.model} (${fastestModel.averageTimeSeconds.toFixed(2)}s)`}>
+                Best: {fastestModel.averageTimeSeconds.toFixed(2)}s
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
