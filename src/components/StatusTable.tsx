@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ModelStatus, SortField, SortOrder } from '../types';
 import { ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, AlertTriangle, Lock, Unlock, Clock, Info } from 'lucide-react';
-import { formatUnlockTime, formatSuccessRate } from '../utils/timeUtils';
+import { formatUnlockTime, formatSuccessRate, formatDateTime } from '../utils/timeUtils';
 
 interface StatusTableProps {
   models: ModelStatus[];
@@ -38,14 +38,7 @@ export const StatusTable: React.FC<StatusTableProps> = ({
   };
 
   const formatTimestamp = (dateStr?: string | null) => {
-    if (!dateStr) return 'Untested';
-    try {
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    } catch {
-      return dateStr;
-    }
+    return formatDateTime(dateStr);
   };
 
   if (models.length === 0) {

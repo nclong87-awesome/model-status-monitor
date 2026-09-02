@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ModelStatus } from '../types';
 import { X, CheckCircle2, AlertTriangle, Lock, Unlock, Clock, Shield, Server } from 'lucide-react';
-import { formatUnlockTime, formatSuccessRate } from '../utils/timeUtils';
+import { formatUnlockTime, formatSuccessRate, formatDateTime } from '../utils/timeUtils';
 
 interface ModelDetailModalProps {
   model: ModelStatus | null;
@@ -128,8 +128,8 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({ model, onClo
             </div>
 
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500">Last Tested (UTC)</span>
-              <span className="font-mono text-slate-700">{model.lastTestedUtc || 'Untested / N/A'}</span>
+              <span className="text-slate-500">Last Tested</span>
+              <span className="font-mono text-slate-700">{formatDateTime(model.lastTestedUtc)}</span>
             </div>
 
             {model.isLocked && (

@@ -184,16 +184,25 @@ export default function App() {
         let aVal: any = a[sortField];
         let bVal: any = b[sortField];
 
-        if (aVal == null && bVal == null) return 0;
-        if (aVal == null) return sortOrder === 'asc' ? 1 : -1;
-        if (bVal == null) return sortOrder === 'asc' ? -1 : 1;
+        // Untested models or missing data should ALWAYS sort to the bottom
+        const isAUntested = aVal == null || a.status?.toLowerCase() === 'untested';
+        const isBUntested = bVal == null || b.status?.toLowerCase() === 'untested';
+
+        if (isAUntested && isBUntested) return 0;
+        if (isAUntested) return 1;  // 'a' goes to the bottom
+        if (isBUntested) return -1; // 'b' goes to the bottom
 
         if (sortField === 'lastTestedUtc') {
           const timeA = new Date(aVal).getTime();
           const timeB = new Date(bVal).getTime();
-          if (!isNaN(timeA) && !isNaN(timeB)) {
-            return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
-          }
+          const validA = !isNaN(timeA);
+          const validB = !isNaN(timeB);
+
+          if (!validA && !validB) return 0;
+          if (!validA) return 1;
+          if (!validB) return -1;
+
+          return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
         }
 
         if (typeof aVal === 'string') {

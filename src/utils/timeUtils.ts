@@ -100,6 +100,22 @@ export function formatAverageTime(seconds: number | null | undefined, decimals =
 }
 
 /**
+ * Format timestamp string into date and time format (e.g. "Sep 1, 2026, 05:08:13 AM").
+ */
+export function formatDateTime(dateStr?: string | null): string {
+  if (!dateStr) return 'Untested';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const dateFormatted = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeFormatted = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return `${dateFormatted}, ${timeFormatted}`;
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
  * Helper to calculate a future ISO timestamp string given relative offsets (days, hours, minutes)
  */
 export function createUnlockTimestamp(offsetHours: number = 0, offsetDays: number = 0, offsetMinutes: number = 0): string {
