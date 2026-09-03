@@ -26,3 +26,15 @@ export type SortField =
   | 'lastTestedUtc';
 
 export type SortOrder = 'asc' | 'desc';
+
+export interface HealthCheckResponse {
+  jobId: string;
+  provider: string;
+  model: string;
+  status: 'queued' | string;
+}
+
+export interface QueuedJobInfo extends HealthCheckResponse {
+  timestamp: string;
+}
+

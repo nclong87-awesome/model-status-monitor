@@ -18,6 +18,7 @@ export const StatusTable: React.FC<StatusTableProps> = ({
   onSort,
   onSelectModel,
 }) => {
+
   const [now, setNow] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -290,11 +291,12 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                   <td className="py-3 px-4 text-center">
                     <button
                       type="button"
+                      id={`btn-table-details-${item.provider}-${item.model}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelectModel(item);
                       }}
-                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
                       title="View model details"
                     >
                       <Info className="w-4 h-4" />

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { ModelStatus, SortField, SortOrder } from './types';
+import { ModelStatus, SortField, SortOrder, HealthCheckResponse } from './types';
 import { INITIAL_MODEL_DATA } from './data/initialData';
-import { fetchModelStatus, API_URL } from './services/api';
+import { fetchModelStatus, queueHealthCheck, simulateHealthCheck, API_URL } from './services/api';
 import { Header } from './components/Header';
 import { StatsOverview } from './components/StatsOverview';
 import { FilterBar } from './components/FilterBar';
@@ -9,6 +9,7 @@ import { StatusTable } from './components/StatusTable';
 import { ModelDetailModal } from './components/ModelDetailModal';
 import { JsonModal } from './components/JsonModal';
 import { AlertCircle, RefreshCw, CheckCircle2, X } from 'lucide-react';
+
 
 const STORAGE_KEY = 'llm_model_status_data_v1';
 const SHOW_STATS_KEY = 'llm_model_status_show_stats';
@@ -87,6 +88,89 @@ export default function App() {
 
   const [selectedModel, setSelectedModel] = useState<ModelStatus | null>(null);
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
+
+  // Health check state
+  const [checkingModelKey, setCheckingModelKey] = useState<string | null>(null);
+  const [activeJobs, setActiveJobs] = useState<Record<string, HealthCheckResponse>>({});
+  const [healthCheckError, setHealthCheckError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{
+    text: string;
+    type: 'success' | 'error';
+    jobId?: string;
+  } | null>(null);
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+    }, 7000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
+  // Execute health check for a model
+  const handleRunHealthCheck = useCallback(async (targetModel: ModelStatus, isSimulation: boolean = false) => {
+    const key = `${targetModel.provider}-${targetModel.model}`;
+    setCheckingModelKey(key);
+    setHealthCheckError(null);
+
+    try {
+      let result: HealthCheckResponse;
+      if (isSimulation) {
+        result = simulateHealthCheck(targetModel.provider, targetModel.model);
+      } else {
+        result = await queueHealthCheck(targetModel.provider, targetModel.model);
+      }
+
+      // Record active job
+      setActiveJobs((prev) => ({
+        ...prev,
+        [key]: result,
+      }));
+
+      // Update model lastTestedUtc in data table
+      const nowIso = new Date().toISOString();
+      setData((prev) =>
+        prev.map((m) => {
+          if (m.provider === targetModel.provider && m.model === targetModel.model) {
+            return {
+              ...m,
+              lastTestedUtc: nowIso,
+            };
+          }
+          return m;
+        })
+      );
+
+      // Also update selectedModel if it's currently open
+      setSelectedModel((prev) => {
+        if (prev && prev.provider === targetModel.provider && prev.model === targetModel.model) {
+          return {
+            ...prev,
+            lastTestedUtc: nowIso,
+          };
+        }
+        return prev;
+      });
+
+      setToastMessage({
+        text: `Health check queued for ${targetModel.model} (${targetModel.provider})`,
+        jobId: result.jobId,
+        type: 'success',
+      });
+    } catch (err: any) {
+      console.error('Failed to run health check:', err);
+      const errMsg = err?.message || 'Network request failed';
+      setHealthCheckError(errMsg);
+      setToastMessage({
+        text: `Health check request failed: ${errMsg}`,
+        type: 'error',
+      });
+    } finally {
+      setCheckingModelKey(null);
+    }
+  }, []);
+
 
   // Sync to local storage on manual state edits
   useEffect(() => {
@@ -340,9 +424,55 @@ export default function App() {
       {/* Model Detail Drawer / Modal */}
       <ModelDetailModal
         model={selectedModel}
-        onClose={() => setSelectedModel(null)}
+        onClose={() => {
+          setSelectedModel(null);
+          setHealthCheckError(null);
+        }}
         onToggleLock={handleToggleLock}
+        onRunHealthCheck={(m) => handleRunHealthCheck(m, false)}
+        isHealthChecking={selectedModel ? checkingModelKey === `${selectedModel.provider}-${selectedModel.model}` : false}
+        activeJob={selectedModel ? activeJobs[`${selectedModel.provider}-${selectedModel.model}`] : null}
+        healthCheckError={healthCheckError}
+        onClearHealthCheckError={() => setHealthCheckError(null)}
+        onSimulateHealthCheck={(m) => handleRunHealthCheck(m, true)}
       />
+
+      {/* Floating Health Check Toast Notification */}
+      {toastMessage && (
+        <div
+          id="health-check-toast"
+          className="fixed bottom-6 right-6 z-50 max-w-md bg-white border border-slate-200 shadow-xl rounded-2xl p-4 flex items-start gap-3 animate-in slide-in-from-bottom-5 duration-200"
+        >
+          {toastMessage.type === 'success' ? (
+            <div className="p-1.5 bg-emerald-100 rounded-lg text-emerald-700 shrink-0 mt-0.5">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          ) : (
+            <div className="p-1.5 bg-rose-100 rounded-lg text-rose-700 shrink-0 mt-0.5">
+              <AlertCircle className="w-4 h-4" />
+            </div>
+          )}
+          <div className="flex-1 text-xs min-w-0">
+            <div className="font-bold text-slate-900">
+              {toastMessage.type === 'success' ? 'Health Check Queued (HTTP 202)' : 'Health Check Request Failed'}
+            </div>
+            <div className="text-slate-600 mt-0.5 break-words">{toastMessage.text}</div>
+            {toastMessage.jobId && (
+              <div className="font-mono text-[11px] text-blue-800 bg-blue-50 border border-blue-200/80 rounded-md px-2 py-0.5 mt-1.5 inline-flex items-center gap-1">
+                <span className="text-blue-600">Job ID:</span>
+                <span className="font-semibold select-all">{toastMessage.jobId}</span>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            title="Dismiss notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* JSON Import/Export Modal */}
       {isJsonModalOpen && (
