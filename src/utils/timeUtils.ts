@@ -116,6 +116,33 @@ export function formatDateTime(dateStr?: string | null): string {
 }
 
 /**
+ * Format a past timestamp into a clean relative duration string (e.g. "2m ago", "1h ago", "Aug 25")
+ */
+export function formatRelativeTime(dateStr?: string | null, now: Date = new Date()): string {
+  if (!dateStr) return 'Untested';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const diffMs = now.getTime() - d.getTime();
+    if (diffMs < 0) return 'Just now';
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return 'Just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    const dateFormatted = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const timeFormatted = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `${dateFormatted}, ${timeFormatted}`;
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
  * Helper to calculate a future ISO timestamp string given relative offsets (days, hours, minutes)
  */
 export function createUnlockTimestamp(offsetHours: number = 0, offsetDays: number = 0, offsetMinutes: number = 0): string {

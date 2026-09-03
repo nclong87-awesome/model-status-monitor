@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ModelStatus, SortField, SortOrder } from '../types';
-import { ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, AlertTriangle, Lock, Unlock, Clock, Info } from 'lucide-react';
-import { formatUnlockTime, formatSuccessRate, formatDateTime } from '../utils/timeUtils';
+import { ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Lock, Unlock } from 'lucide-react';
+import { formatUnlockTime, formatSuccessRate, formatDateTime, formatRelativeTime } from '../utils/timeUtils';
 
 interface StatusTableProps {
   models: ModelStatus[];
@@ -18,8 +18,8 @@ export const StatusTable: React.FC<StatusTableProps> = ({
   onSort,
   onSelectModel,
 }) => {
-
   const [now, setNow] = useState<Date>(new Date());
+  const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -27,19 +27,16 @@ export const StatusTable: React.FC<StatusTableProps> = ({
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
   const renderSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />;
+      return <ArrowUpDown className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-80 transition-opacity" />;
     }
     return sortOrder === 'asc' ? (
-      <ArrowUp className="w-3.5 h-3.5 text-slate-800" />
+      <ArrowUp className="w-3.5 h-3.5 text-blue-600 shrink-0" />
     ) : (
-      <ArrowDown className="w-3.5 h-3.5 text-slate-800" />
+      <ArrowDown className="w-3.5 h-3.5 text-blue-600 shrink-0" />
     );
-  };
-
-  const formatTimestamp = (dateStr?: string | null) => {
-    return formatDateTime(dateStr);
   };
 
   if (models.length === 0) {
@@ -52,17 +49,56 @@ export const StatusTable: React.FC<StatusTableProps> = ({
     );
   }
 
+  const cellPadding = density === 'compact' ? 'py-2 px-3' : 'py-2.5 px-3.5';
+
   return (
     <div id="status-table-wrapper" className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+      {/* Table Toolbar Header with Count and Density Toggle */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/60 border-b border-slate-200/80 text-xs text-slate-500">
+        <div className="flex items-center gap-2 font-medium">
+          <span>{models.length} {models.length === 1 ? 'model' : 'models'}</span>
+          <span className="text-slate-300">•</span>
+          <span className="text-slate-400">Click any row for details</span>
+        </div>
+
+        {/* Density Toggle */}
+        <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg">
+          <button
+            type="button"
+            onClick={() => setDensity('comfortable')}
+            className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+              density === 'comfortable'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+            title="Comfortable row height"
+          >
+            Comfortable
+          </button>
+          <button
+            type="button"
+            onClick={() => setDensity('compact')}
+            className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+              density === 'compact'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+            title="Compact condensed view"
+          >
+            Compact
+          </button>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-medium select-none">
+            <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider select-none">
               <th
                 onClick={() => onSort('rank')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group w-16"
+                className="py-2.5 px-3 cursor-pointer hover:bg-slate-100/80 transition-colors group w-12 text-center"
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-center gap-0.5">
                   <span>#</span>
                   {renderSortIcon('rank')}
                 </div>
@@ -70,7 +106,7 @@ export const StatusTable: React.FC<StatusTableProps> = ({
 
               <th
                 onClick={() => onSort('provider')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                className="py-2.5 px-3.5 cursor-pointer hover:bg-slate-100/80 transition-colors group"
               >
                 <div className="flex items-center gap-1">
                   <span>Provider</span>
@@ -80,7 +116,7 @@ export const StatusTable: React.FC<StatusTableProps> = ({
 
               <th
                 onClick={() => onSort('model')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                className="py-2.5 px-3.5 cursor-pointer hover:bg-slate-100/80 transition-colors group"
               >
                 <div className="flex items-center gap-1">
                   <span>Model Identifier</span>
@@ -90,7 +126,7 @@ export const StatusTable: React.FC<StatusTableProps> = ({
 
               <th
                 onClick={() => onSort('status')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                className="py-2.5 px-3.5 cursor-pointer hover:bg-slate-100/80 transition-colors group"
               >
                 <div className="flex items-center gap-1">
                   <span>Status</span>
@@ -100,7 +136,7 @@ export const StatusTable: React.FC<StatusTableProps> = ({
 
               <th
                 onClick={() => onSort('tier')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                className="py-2.5 px-3.5 cursor-pointer hover:bg-slate-100/80 transition-colors group"
               >
                 <div className="flex items-center gap-1">
                   <span>Tier</span>
@@ -110,17 +146,17 @@ export const StatusTable: React.FC<StatusTableProps> = ({
 
               <th
                 onClick={() => onSort('averageTimeSeconds')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group text-right"
+                className="py-2.5 px-3.5 cursor-pointer hover:bg-slate-100/80 transition-colors group text-right"
               >
                 <div className="flex items-center justify-end gap-1">
-                  <span>Avg Latency</span>
+                  <span>Latency</span>
                   {renderSortIcon('averageTimeSeconds')}
                 </div>
               </th>
 
               <th
                 onClick={() => onSort('successRatePercent')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                className="py-2.5 px-3.5 cursor-pointer hover:bg-slate-100/80 transition-colors group"
               >
                 <div className="flex items-center gap-1">
                   <span>Success Rate</span>
@@ -128,22 +164,18 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                 </div>
               </th>
 
-              <th className="py-3 px-4 text-center">
-                <span>Lock</span>
+              <th className="py-2.5 px-3.5 text-center">
+                <span>Availability</span>
               </th>
 
               <th
                 onClick={() => onSort('lastTestedUtc')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group text-right"
+                className="py-2.5 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group text-right"
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Last Tested</span>
                   {renderSortIcon('lastTestedUtc')}
                 </div>
-              </th>
-
-              <th className="py-3 px-4 text-center w-16">
-                <span>Action</span>
               </th>
             </tr>
           </thead>
@@ -169,138 +201,118 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                   className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                 >
                   {/* Rank */}
-                  <td className="py-3 px-4 font-semibold text-slate-500 text-xs">
+                  <td className={`${cellPadding} font-mono text-slate-400 text-xs text-center`}>
                     {item.rank}
                   </td>
 
-                  {/* Provider */}
-                  <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200/60 text-xs font-semibold text-slate-700">
-                      {item.provider}
-                    </span>
+                  {/* Provider - Clean typography without bulky badge */}
+                  <td className={`${cellPadding} font-semibold text-xs text-slate-800 whitespace-nowrap`}>
+                    {item.provider}
                   </td>
 
-                  {/* Model */}
-                  <td className="py-3 px-4 font-mono text-xs text-slate-900 font-medium">
+                  {/* Model Identifier - Primary visual focus */}
+                  <td className={`${cellPadding} font-mono text-xs text-slate-900 font-medium`}>
                     <span className="group-hover:text-blue-600 transition-colors">
                       {item.model}
                     </span>
                   </td>
 
-                  {/* Status */}
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  {/* Status - Clean dot indicator without bulky pill */}
+                  <td className={`${cellPadding} whitespace-nowrap`}>
                     {isHealthy ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Healthy
-                      </span>
+                      <div className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span>Healthy</span>
+                      </div>
                     ) : isUntested ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                        <Clock className="w-3.5 h-3.5" />
-                        Untested
-                      </span>
+                      <div className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                        <span>Untested</span>
+                      </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        Unhealthy
-                      </span>
+                      <div className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/70">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                        <span>Unhealthy</span>
+                      </div>
                     )}
                   </td>
 
-                  {/* Tier */}
-                  <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">
-                    <span className={`inline-block px-2 py-0.5 rounded-sm font-medium ${
-                      item.tier?.includes('Tier 1')
-                        ? 'bg-blue-50 text-blue-700 border border-blue-100'
-                        : 'bg-amber-50 text-amber-800 border border-amber-100'
-                    }`}>
+                  {/* Tier - Subtle light tag */}
+                  <td className={`${cellPadding} whitespace-nowrap`}>
+                    <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium text-slate-600 bg-slate-100">
                       {item.tier}
                     </span>
                   </td>
 
                   {/* Avg Latency */}
-                  <td className="py-3 px-4 text-right whitespace-nowrap">
+                  <td className={`${cellPadding} text-right whitespace-nowrap`}>
                     {item.averageTimeSeconds != null ? (
-                      <span className={`font-mono font-semibold text-xs ${
+                      <span className={`font-mono text-xs font-medium ${
                         item.averageTimeSeconds < 3
                           ? 'text-emerald-600'
                           : item.averageTimeSeconds < 6
-                          ? 'text-slate-800'
+                          ? 'text-slate-700'
                           : 'text-amber-700'
                       }`}>
                         {item.averageTimeSeconds.toFixed(3)}s
                       </span>
                     ) : (
-                      <span className="font-mono text-xs text-slate-400">N/A</span>
+                      <span className="font-mono text-xs text-slate-400">—</span>
                     )}
                   </td>
 
-                  {/* Success Rate */}
-                  <td className="py-3 px-4 min-w-[170px]">
+                  {/* Success Rate - Sleek compact bar */}
+                  <td className={`${cellPadding} min-w-[140px]`}>
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden min-w-[36px]">
+                      <div className="w-14 bg-slate-100 rounded-full h-1.5 overflow-hidden">
                         <div
-                          className={`h-full transition-all ${rateColor}`}
+                          className={`h-full rounded-full transition-all ${rateColor}`}
                           style={{ width: `${Math.min(100, Math.max(0, item.successRatePercent ?? 0))}%` }}
                         />
                       </div>
-                      <span className="font-mono text-xs font-medium text-slate-700 min-w-[42px] text-right shrink-0">
-                        {item.successRatePercent != null ? `${formatSuccessRate(item.successRatePercent)}%` : 'N/A'}
+                      <span className="font-mono text-xs font-medium text-slate-700 min-w-[36px]">
+                        {item.successRatePercent != null ? `${formatSuccessRate(item.successRatePercent)}%` : '—'}
                       </span>
-                      <span className="text-[11px] text-slate-400 shrink-0">
+                      <span className="text-[11px] text-slate-400">
                         ({item.successfulRequests ?? 0}/{item.totalRequests ?? 0})
                       </span>
                     </div>
                   </td>
 
-                  {/* Locked */}
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
+                  {/* Availability / Lock - Quiet default state, highlighted locked state */}
+                  <td className={`${cellPadding} text-center whitespace-nowrap`}>
                     {item.isLocked ? (
                       <div
-                        className="inline-flex flex-col items-center justify-center px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-700 min-w-[120px]"
-                        title={item.unlocksAtUtc ? `Unlocks at ${item.unlocksAtUtc}` : 'Model is locked'}
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-medium"
+                        title={item.unlocksAtUtc ? `Locked until ${item.unlocksAtUtc}` : 'Model is locked'}
                       >
-                        <div className="inline-flex items-center gap-1 font-semibold text-xs text-rose-800">
-                          <Lock className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                          <span>Locked</span>
-                        </div>
+                        <Lock className="w-3 h-3 text-rose-600 shrink-0" />
+                        <span>Locked</span>
                         {item.unlocksAtUtc && (
-                          <span className="text-[11px] font-mono text-rose-600 font-medium flex items-center gap-1 mt-0.5">
-                            <Clock className="w-2.5 h-2.5 text-rose-500 shrink-0" />
-                            <span>{formatUnlockTime(item.unlocksAtUtc, now)}</span>
+                          <span className="text-[11px] font-mono text-rose-600/90 font-normal">
+                            ({formatUnlockTime(item.unlocksAtUtc, now)})
                           </span>
                         )}
                       </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-xs font-medium opacity-80" title="Unlocked">
-                        <Unlock className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Unlocked</span>
+                      <span
+                        className="inline-flex items-center gap-1 text-slate-400 text-xs"
+                        title="Model is ready and unlocked"
+                      >
+                        <Unlock className="w-3 h-3 text-slate-300 group-hover:text-slate-400 transition-colors" />
+                        <span className="text-slate-400 text-xs">Ready</span>
                       </span>
                     )}
                   </td>
 
-                  {/* Last Tested */}
-                  <td className="py-3 px-4 text-right text-xs text-slate-500 font-mono whitespace-nowrap">
-                    <div className="flex items-center justify-end gap-1" title={item.lastTestedUtc}>
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      {formatTimestamp(item.lastTestedUtc)}
-                    </div>
-                  </td>
-
-                  {/* Action */}
-                  <td className="py-3 px-4 text-center">
-                    <button
-                      type="button"
-                      id={`btn-table-details-${item.provider}-${item.model}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectModel(item);
-                      }}
-                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
-                      title="View model details"
+                  {/* Last Tested - Relative clean time with tooltip */}
+                  <td className={`${density === 'compact' ? 'py-2 px-4' : 'py-2.5 px-4'} text-right whitespace-nowrap`}>
+                    <span
+                      className="font-mono text-xs text-slate-500 hover:text-slate-800 transition-colors"
+                      title={formatDateTime(item.lastTestedUtc)}
                     >
-                      <Info className="w-4 h-4" />
-                    </button>
+                      {formatRelativeTime(item.lastTestedUtc, now)}
+                    </span>
                   </td>
                 </tr>
               );
@@ -311,3 +323,4 @@ export const StatusTable: React.FC<StatusTableProps> = ({
     </div>
   );
 };
+
