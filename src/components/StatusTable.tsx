@@ -282,14 +282,16 @@ export const StatusTable: React.FC<StatusTableProps> = ({
                   {/* Availability / Lock - Quiet default state, highlighted locked state */}
                   <td className={`${cellPadding} text-center whitespace-nowrap`}>
                     {item.isLocked ? (
-                      <div
-                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-medium"
-                        title={item.unlocksAtUtc ? `Locked until ${item.unlocksAtUtc}` : 'Model is locked'}
-                      >
-                        <Lock className="w-3 h-3 text-rose-600 shrink-0" />
-                        <span>Locked</span>
+                      <div className="inline-flex flex-col items-center justify-center">
+                        <div
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-medium"
+                          title={item.unlocksAtUtc ? `Locked until ${item.unlocksAtUtc}` : 'Model is locked'}
+                        >
+                          <Lock className="w-3 h-3 text-rose-600 shrink-0" />
+                          <span>Locked</span>
+                        </div>
                         {item.unlocksAtUtc && (
-                          <span className="text-[11px] font-mono text-rose-600/90 font-normal">
+                          <span className="text-[11px] font-mono text-rose-600/90 font-normal mt-0.5">
                             ({formatUnlockTime(item.unlocksAtUtc, now)})
                           </span>
                         )}
